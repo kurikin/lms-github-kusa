@@ -9,6 +9,23 @@ import {
 import { setContext } from "@apollo/client/link/context";
 
 const token = process.env.API_KEY;
+const query = gql`
+    query ($userName: String!) {
+        user(login: $userName) {
+            contributionsCollection {
+                contributionCalendar {
+                    totalContributions
+                    weeks {
+                        contributionDays {
+                            contributionCount
+                            date
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
 
 const httpLink = createHttpLink({
     uri: "https://api.github.com/graphql",
@@ -29,45 +46,62 @@ const client = new ApolloClient({
 });
 
 (async () => {
-    console.log("Hello!");
     console.log(token);
 
-    client
-        .query({
-            query: gql`
-                query ($userName: String!) {
-                    user(login: $userName) {
-                        contributionsCollection {
-                            contributionCalendar {
-                                totalContributions
-                                weeks {
-                                    contributionDays {
-                                        contributionCount
-                                        date
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            variables: {
-                userName: "kurikin",
+    const {
+        data: {
+            user: {
+                contributionsCollection: {
+                    contributionCalendar: { totalContributions, weeks },
+                },
             },
-        })
-        .then((result) => console.log(result));
+        },
+    } = await client.query({
+        query: query,
+        variables: {
+            userName: "kurikin",
+        },
+    });
 
-    const targetElement = document.getElementsByClassName("base")[0];
+    const contributions = [];
+
+    console.log(weeks);
+
+    weeks.forEach((week) => {
+        week.contributionDays.forEach((day) => {
+            contributions.push(day.contributionCount);
+        });
+    });
+
+    const parentElement = document.getElementsByClassName("base")[0];
     const baseHtml = createBaseHtml();
 
-    targetElement.insertAdjacentHTML("afterbegin", baseHtml);
+    parentElement.insertAdjacentHTML("afterbegin", baseHtml);
+
+    const maxCount = Math.max(...contributions);
 
     const squares = document.querySelector(".squares");
+
+    console.log(contributions);
+
     for (var i = 1; i < 365; i++) {
-        const level = Math.floor(Math.random() * 3);
+        let level = -1;
+
+        if (contributions[i] === 0) {
+            level = 0;
+        } else if (contributions[i] < maxCount / 4) {
+            level = 1;
+        } else if (contributions[i] < maxCount / 2) {
+            level = 2;
+        } else {
+            level = 3;
+        }
+
+        console.log(level);
+
         squares.insertAdjacentHTML(
             "beforeend",
-            `<li data-level="${level}"></li>`
+            `<li data-level=${level}></li>`
         );
     }
 })();
