@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "LMS-Github-Kusa",
+    "version": "1.0.0",
+    "author": "kurikin",
+    "content_scripts": [
+        {
+            "matches": [
+                "https://lms.ynu.ac.jp/lms/*"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ]
+}
